@@ -1,0 +1,51 @@
+# Copy to .dev.vars for local development (never commit .dev.vars).
+# Secrets in production are set with `wrangler secret put <NAME>`.
+
+# --- AI provider (OpenAI-compatible) -----------------------------------------
+AI_BASE_URL=https://example.com/v1
+# Secret in production: wrangler secret put AI_API_KEY
+AI_API_KEY=local-dev-key
+AI_MODEL=my-model
+# "responses" (POST {AI_BASE_URL}/responses) or "chat_completions"
+AI_API_STYLE=responses
+AI_TIMEOUT_MS=30000
+AI_MAX_RETRIES=2
+AI_BATCH_SIZE=10
+AI_CONCURRENCY=2
+
+# --- Telegram ----------------------------------------------------------------
+# Secret in production: wrangler secret put TELEGRAM_BOT_TOKEN
+TELEGRAM_BOT_TOKEN=123456:local-dev-token
+TELEGRAM_CHAT_ID=
+
+# --- Admin API ---------------------------------------------------------------
+# Secret in production: wrangler secret put ADMIN_API_KEY
+ADMIN_API_KEY=local-admin-key
+
+# --- Reddit (script app credentials, OAuth password/refresh flow disabled) ---
+REDDIT_CLIENT_ID=
+# Secret in production: wrangler secret put REDDIT_CLIENT_SECRET
+REDDIT_CLIENT_SECRET=
+REDDIT_USER_AGENT=merchant-signal/1.0 (social listening research bot)
+SUBREDDITS=shopify,ecommerce,smallbusiness,Entrepreneur,dropship,FacebookAds,PPC
+REDDIT_POSTS_PER_SUBREDDIT=50
+
+# --- Shopify Community -------------------------------------------------------
+SHOPIFY_COMMUNITY_PAGES=2
+
+# --- Alerts ------------------------------------------------------------------
+ENABLE_REALTIME_ALERTS=false
+REALTIME_ALERT_THRESHOLD=90
+ALERT_COOLDOWN_HOURS=72
+
+# --- Cost controls -----------------------------------------------------------
+MAX_AI_ITEMS_PER_DAY=500
+MIN_RULE_SCORE=1
+MIN_STORE_OPPORTUNITY_SCORE=40
+MIN_DIGEST_OPPORTUNITY_SCORE=55
+
+# --- Digest ------------------------------------------------------------------
+DIGEST_TIMEZONE=Asia/Bangkok
+DIGEST_TOP_N=5
+DIGEST_EMERGING_N=5
+DIGEST_BUYING_INTENT_N=5

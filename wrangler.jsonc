@@ -1,0 +1,82 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "merchant-signal",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-09-23",
+  "workers_dev": true,
+  "observability": {
+    "enabled": true
+  },
+
+  // ---------------------------------------------------------------------------
+  // Non-secret configuration. Secrets are NEVER stored here:
+  //   wrangler secret put AI_API_KEY
+  //   wrangler secret put TELEGRAM_BOT_TOKEN
+  //   wrangler secret put ADMIN_API_KEY
+  //   wrangler secret put REDDIT_CLIENT_SECRET
+  // TELEGRAM_CHAT_ID is not a secret but is deployment specific.
+  // ---------------------------------------------------------------------------
+  "vars": {
+    "AI_BASE_URL": "https://api.nexusmmo.store",
+    "AI_MODEL": "gpt-5.6-terra",
+    "AI_API_STYLE": "responses",
+    "AI_TIMEOUT_MS": "30000",
+    "AI_MAX_RETRIES": "2",
+    "AI_BATCH_SIZE": "10",
+    "AI_CONCURRENCY": "2",
+    "TELEGRAM_CHAT_ID": "6925985890",
+    "SUBREDDITS": "shopify,ecommerce,smallbusiness,Entrepreneur,dropship,FacebookAds,PPC",
+    "REDDIT_USER_AGENT": "merchant-signal/1.0 (social listening research bot)",
+    "REDDIT_POSTS_PER_SUBREDDIT": "50",
+    "SHOPIFY_COMMUNITY_PAGES": "2",
+
+    "MAX_AI_ITEMS_PER_DAY": "500",
+    "MIN_RULE_SCORE": "1",
+    "MIN_STORE_OPPORTUNITY_SCORE": "40",
+    "MIN_DIGEST_OPPORTUNITY_SCORE": "55",
+
+    "ENABLE_REALTIME_ALERTS": "false",
+    "REALTIME_ALERT_THRESHOLD": "90",
+    "ALERT_COOLDOWN_HOURS": "72",
+
+    "DIGEST_TIMEZONE": "Asia/Bangkok",
+    "DIGEST_TOP_N": "5",
+    "DIGEST_EMERGING_N": "5",
+    "DIGEST_BUYING_INTENT_N": "5"
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "merchant-signal",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  "queues": {
+    "producers": [
+      {
+        "binding": "PAIN_QUEUE",
+        "queue": "pain-signals"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "pain-signals",
+        // Keep max_batch_size in sync with AI_BATCH_SIZE: one queue batch == one
+        // AI request. The consumer handler is written to split oversized batches.
+        "max_batch_size": 10,
+        "max_batch_timeout": 30,
+        "max_retries": 3,
+        "retry_delay": 60,
+        "dead_letter_queue": "pain-signals-dlq"
+      }
+    ]
+  },
+
+  // collect: every 2h, aggregate: every 2h offset by 20m, digest: 01:00 UTC == 08:00 Asia/Bangkok
+  "triggers": {
+    "crons": ["0 */2 * * *", "20 */2 * * *", "0 1 * * *"]
+  }
+}
