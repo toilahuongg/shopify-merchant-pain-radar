@@ -31,10 +31,11 @@ import type { Env } from "../src/env";
 import type { ExamplePost, RankedCluster } from "../src/types";
 
 const SEPARATOR = "──────────────";
-const NEW_GROWTH_LABEL = "new";
+const NEW_GROWTH_LABEL = "mới";
 const HEADER = "🛒 MERCHANT SIGNAL";
 
 type DigestClusterFixture = RankedCluster & {
+  title?: string;
   potentialProduct?: string;
   problemShort?: string;
   currentWorkaround?: string;
@@ -154,14 +155,29 @@ describe("buildDigest rendering", () => {
     expect(content.buyingIntentCount).toBeLessThanOrEqual(options.buyingIntentN);
 
     expect(content.html).toContain(HEADER);
-    expect(content.html).toContain("Daily Merchant Pain Radar");
-    expect(content.html).toContain("🔥 TOP OPPORTUNITIES");
-    expect(content.html).toContain("🚀 EMERGING PAINS");
-    expect(content.html).toContain("💰 HIGHEST BUYING INTENT");
+    expect(content.html).toContain("Radar nỗi đau merchant hằng ngày");
+    expect(content.html).toContain("🔥 CƠ HỘI HÀNG ĐẦU");
+    expect(content.html).toContain("🚀 NỖI ĐAU ĐANG NỔI LÊN");
+    expect(content.html).toContain("💰 NHU CẦU MUA CAO NHẤT");
     expect(content.html).toContain(SEPARATOR);
 
     // The "new" growth label is used for non-finite growth.
     expect(content.html).toContain(NEW_GROWTH_LABEL);
+  });
+
+  it("renders Vietnamese labels and prefers the AI title over the problem key", () => {
+    const options = { topN: 1, emergingN: 0, buyingIntentN: 0 };
+
+    const withTitle = buildDigest([cluster({ title: "Lệch tồn kho giữa các chi nhánh" })], options);
+    expect(withTitle.html).toContain("Lệch tồn kho giữa các chi nhánh");
+    expect(withTitle.html).toContain("Điểm: 70/100");
+    expect(withTitle.html).toContain("Số đề cập: 10");
+    expect(withTitle.html).toContain("Nhu cầu mua: TRUNG BÌNH");
+
+    // No AI title: the humanized problem key is the only name available.
+    const withoutTitle = buildDigest([cluster({ title: "" })], options);
+    expect(withoutTitle.html).toContain("inventory sync");
+    expect(withoutTitle.html).not.toContain("Lệch tồn kho");
   });
 
   it("escapes user content and never emits a raw tag", () => {
@@ -224,7 +240,7 @@ describe("buildDigest rendering", () => {
     for (const line of lines) {
       expect(line.length).toBeLessThanOrEqual(TELEGRAM_MAX_MESSAGE_LENGTH);
     }
-    const problemLine = lines.find((line) => line.startsWith("Problem: "));
+    const problemLine = lines.find((line) => line.startsWith("Vấn đề: "));
     expect(problemLine).toBeDefined();
     expect(problemLine!.length).toBeLessThanOrEqual(TELEGRAM_MAX_MESSAGE_LENGTH);
   });
@@ -275,6 +291,7 @@ describe("parseClusterSummaryResponse", () => {
   it("parses plain JSON", () => {
     const result = parseClusterSummaryResponse(JSON.stringify(valid));
     expect(result.get("inventory-sync")).toEqual({
+      title: "",
       potentialProduct: "Sync tool",
       problemShort: "Stock drift",
     });
@@ -497,7 +514,7 @@ describe("sendDailyDigest AI enrichment", () => {
 
     expect(result.ok).toBe(true);
     const html = telegram.sendMessage.mock.calls[0]![0];
-    expect(html).toContain("Software for inventory sync");
+    expect(html).toContain("Phần mềm cho inventory sync");
     expect(records.some((record) => record.event === "digest.ai_failed")).toBe(true);
   });
 });

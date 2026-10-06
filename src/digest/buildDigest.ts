@@ -30,6 +30,7 @@ export interface DigestContent {
  * carries neither; the renderer simply omits or falls back when absent.
  */
 type DigestCluster = RankedCluster & {
+  title?: string;
   potentialProduct?: string;
   problemShort?: string;
   currentWorkaround?: string;
@@ -37,7 +38,7 @@ type DigestCluster = RankedCluster & {
 };
 
 const SEPARATOR = "──────────────";
-const NEW_GROWTH_LABEL = "new";
+const NEW_GROWTH_LABEL = "mới";
 /** Longest dynamic text fragment rendered on one line. */
 const MAX_TEXT = 160;
 /** Longest raw URL rendered in a `Links:` line. */
@@ -61,11 +62,11 @@ function trimmed(value: string | null | undefined): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function buyingIntentLabel(value: number): "HIGH" | "MEDIUM" | "LOW" {
-  if (!Number.isFinite(value)) return "LOW";
-  if (value >= 4) return "HIGH";
-  if (value >= 3) return "MEDIUM";
-  return "LOW";
+function buyingIntentLabel(value: number): "CAO" | "TRUNG BÌNH" | "THẤP" {
+  if (!Number.isFinite(value)) return "THẤP";
+  if (value >= 4) return "CAO";
+  if (value >= 3) return "TRUNG BÌNH";
+  return "THẤP";
 }
 
 /**
@@ -107,8 +108,10 @@ function compareByBuyingIntent(a: RankedCluster, b: RankedCluster): number {
   return a.problemKey.localeCompare(b.problemKey);
 }
 
+/** Display name: the AI-provided Vietnamese title when present, else the key slug. */
 function clusterName(cluster: DigestCluster): string {
-  return escapeHtml(clip(humanizeProblemKey(cluster.problemKey), 80));
+  const title = trimmed(cluster.title);
+  return escapeHtml(clip(title !== "" ? title : humanizeProblemKey(cluster.problemKey), 80));
 }
 
 function problemText(cluster: DigestCluster): string {
@@ -119,16 +122,17 @@ function problemText(cluster: DigestCluster): string {
 
 /** Deterministic product idea used when the AI pass produced no text. */
 function fallbackPotentialProduct(cluster: DigestCluster): string {
-  const label = humanizeProblemKey(cluster.problemKey);
+  const title = trimmed(cluster.title);
+  const label = title !== "" ? title : humanizeProblemKey(cluster.problemKey);
   const goal = clip(trimmed(cluster.desiredOutcome), 60);
-  return goal !== "" ? `Software for ${label} (goal: ${goal})` : `Software for ${label}`;
+  return goal !== "" ? `Phần mềm cho ${label} (mục tiêu: ${goal})` : `Phần mềm cho ${label}`;
 }
 
 function sourceCounts(cluster: DigestCluster): string {
   const entries = Object.entries(cluster.sources ?? {}).sort((a, b) =>
     b[1] !== a[1] ? b[1] - a[1] : a[0].localeCompare(b[0]),
   );
-  if (entries.length === 0) return "unknown";
+  if (entries.length === 0) return "không rõ";
   return entries.map(([source, count]) => `${escapeHtml(source)} ${count}`).join(" · ");
 }
 
@@ -137,24 +141,24 @@ function linkLine(cluster: DigestCluster): string {
     .slice(0, 2)
     .map((post) => escapeHtml(clip(trimmed(post.url), MAX_URL)))
     .filter((url) => url !== "");
-  return urls.length === 0 ? "" : `Links: ${urls.join(" · ")}`;
+  return urls.length === 0 ? "" : `Liên kết: ${urls.join(" · ")}`;
 }
 
 function renderTopEntry(cluster: DigestCluster, index: number): string {
   const lines = [
-    `${index}. ${clusterName(cluster)} — Score: ${Math.round(cluster.score)}/100`,
-    `Mentions: ${cluster.mentions} · 7d growth: ${growthLabel(cluster)}`,
-    `Problem: ${escapeHtml(problemText(cluster))}`,
+    `${index}. ${clusterName(cluster)} — Điểm: ${Math.round(cluster.score)}/100`,
+    `Số đề cập: ${cluster.mentions} · Tăng trưởng 7 ngày: ${growthLabel(cluster)}`,
+    `Vấn đề: ${escapeHtml(problemText(cluster))}`,
   ];
 
   const workaround = clip(trimmed(cluster.currentWorkaround));
-  if (workaround !== "") lines.push(`Current workaround: ${escapeHtml(workaround)}`);
+  if (workaround !== "") lines.push(`Cách xử lý hiện tại: ${escapeHtml(workaround)}`);
 
-  lines.push(`Buying intent: ${buyingIntentLabel(cluster.buyingIntent)}`);
-  lines.push(`Sources: ${sourceCounts(cluster)}`);
+  lines.push(`Nhu cầu mua: ${buyingIntentLabel(cluster.buyingIntent)}`);
+  lines.push(`Nguồn: ${sourceCounts(cluster)}`);
 
   const product = clip(trimmed(cluster.potentialProduct)) || fallbackPotentialProduct(cluster);
-  lines.push(`Potential product: ${escapeHtml(product)}`);
+  lines.push(`Sản phẩm tiềm năng: ${escapeHtml(product)}`);
 
   const links = linkLine(cluster);
   if (links !== "") lines.push(links);
@@ -184,28 +188,28 @@ export function buildDigest(
 
   const buying = [...ranked].sort(compareByBuyingIntent).slice(0, buyingIntentN);
 
-  const blocks: string[] = ["🛒 MERCHANT SIGNAL\nDaily Merchant Pain Radar"];
+  const blocks: string[] = ["🛒 MERCHANT SIGNAL\nRadar nỗi đau merchant hằng ngày"];
 
-  const topBlock = ["🔥 TOP OPPORTUNITIES"];
+  const topBlock = ["🔥 CƠ HỘI HÀNG ĐẦU"];
   if (top.length === 0) {
-    topBlock.push("No opportunities met the digest threshold this week.");
+    topBlock.push("Tuần này chưa có cơ hội nào đạt ngưỡng báo cáo.");
   } else {
     topBlock.push(top.map((cluster, index) => renderTopEntry(cluster, index + 1)).join(`\n${SEPARATOR}\n`));
   }
   blocks.push(topBlock.join("\n"));
 
-  const emergingBlock = ["🚀 EMERGING PAINS"];
+  const emergingBlock = ["🚀 NỖI ĐAU ĐANG NỔI LÊN"];
   emergingBlock.push(
     emerging.length === 0
-      ? "No emerging pains this week."
+      ? "Tuần này chưa có nỗi đau mới nổi."
       : emerging.map((cluster) => `• ${clusterName(cluster)}: ${growthLabel(cluster)}`).join("\n"),
   );
   blocks.push(emergingBlock.join("\n"));
 
-  const buyingBlock = ["💰 HIGHEST BUYING INTENT"];
+  const buyingBlock = ["💰 NHU CẦU MUA CAO NHẤT"];
   buyingBlock.push(
     buying.length === 0
-      ? "No buying-intent signals this week."
+      ? "Tuần này chưa có tín hiệu nhu cầu mua."
       : buying
           .map((cluster) => `• ${clusterName(cluster)}: ${buyingIntentLabel(cluster.buyingIntent)}`)
           .join("\n"),

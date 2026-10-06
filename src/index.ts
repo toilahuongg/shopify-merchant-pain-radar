@@ -197,6 +197,7 @@ export default {
             telegram,
             logger: adminLogger,
             config,
+            ai: createAiClient({ ...config.ai, logger: adminLogger.child("ai") }),
             now,
           });
           return jsonResponse(result, result.ok ? 200 : 502);

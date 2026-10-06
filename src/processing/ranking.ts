@@ -13,6 +13,7 @@ import {
   getMentionCounts,
   getSampleSignals,
 } from "../lib/db";
+import { categoryLabelVi } from "../types";
 import type { ClusterStatsRow, ExamplePost, RankedCluster } from "../types";
 
 export interface TrendInput {
@@ -149,11 +150,11 @@ function humanizeProblemKey(problemKey: string): string {
  */
 function buildSummary(stats: ClusterStatsRow): string {
   const name = humanizeProblemKey(stats.problem_key);
-  const category = stats.category === null || stats.category === "" ? "other" : stats.category;
-  const mentions = stats.mentions === 1 ? "1 mention" : `${stats.mentions} mentions`;
+  const category = categoryLabelVi(stats.category);
+  const mentions = stats.mentions === 1 ? "1 đề cập" : `${stats.mentions} đề cập`;
   const avg = Math.round(finite(stats.avg_score) * 10) / 10;
   const peak = Math.round(finite(stats.max_score) * 10) / 10;
-  return `${name}: ${mentions} in ${category}, average score ${avg}, peak ${peak}.`;
+  return `${name}: ${mentions} trong ${category}, điểm trung bình ${avg}, cao nhất ${peak}.`;
 }
 
 /** Groups sample signals by cluster: deduped by url, capped per cluster. */

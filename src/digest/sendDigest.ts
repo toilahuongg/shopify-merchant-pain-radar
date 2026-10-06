@@ -39,6 +39,7 @@ export interface DigestSendResult {
 
 /** Local enrichment shape; the shared RankedCluster type is not modified. */
 type EnrichedCluster = RankedCluster & {
+  title?: string;
   potentialProduct?: string;
   problemShort?: string;
 };
@@ -58,37 +59,37 @@ function clip(text: string, max = MAX_TEXT): string {
   return clean.length <= max ? clean : `${clean.slice(0, max - 1).trimEnd()}…`;
 }
 
-function buyingIntentLabel(value: number): "HIGH" | "MEDIUM" | "LOW" {
-  if (!Number.isFinite(value)) return "LOW";
-  if (value >= 4) return "HIGH";
-  if (value >= 3) return "MEDIUM";
-  return "LOW";
+function buyingIntentLabel(value: number): "CAO" | "TRUNG BÌNH" | "THẤP" {
+  if (!Number.isFinite(value)) return "THẤP";
+  if (value >= 4) return "CAO";
+  if (value >= 3) return "TRUNG BÌNH";
+  return "THẤP";
 }
 
 function sourceLine(cluster: RankedCluster): string {
   const entries = Object.entries(cluster.sources ?? {}).sort((a, b) =>
     b[1] !== a[1] ? b[1] - a[1] : a[0].localeCompare(b[0]),
   );
-  if (entries.length === 0) return "unknown";
+  if (entries.length === 0) return "không rõ";
   return entries.map(([source, count]) => `${escapeHtml(source)} ${count}`).join(" · ");
 }
 
 function renderAlert(cluster: RankedCluster): string {
   const problem = clip(cluster.summary.trim()) || cluster.problemKey.replace(/[-_]+/g, " ");
   const lines = [
-    "🚨 HIGH-SIGNAL MERCHANT PAIN",
-    `Problem: ${escapeHtml(problem)}`,
-    `Opportunity score: ${Math.round(cluster.score)}/100`,
-    `Buying intent: ${buyingIntentLabel(cluster.buyingIntent)}`,
-    `Similar mentions this week: ${cluster.mentions7d}`,
-    `Sources: ${sourceLine(cluster)}`,
+    "🚨 NỖI ĐAU MERCHANT TÍN HIỆU CAO",
+    `Vấn đề: ${escapeHtml(problem)}`,
+    `Điểm cơ hội: ${Math.round(cluster.score)}/100`,
+    `Nhu cầu mua: ${buyingIntentLabel(cluster.buyingIntent)}`,
+    `Số đề cập tương tự tuần này: ${cluster.mentions7d}`,
+    `Nguồn: ${sourceLine(cluster)}`,
   ];
 
   const links = cluster.examplePosts
     .slice(0, 2)
     .map((post) => escapeHtml(clip(post.url, MAX_URL)))
     .filter((url) => url !== "");
-  if (links.length > 0) lines.push(`Links: ${links.join(" · ")}`);
+  if (links.length > 0) lines.push(`Liên kết: ${links.join(" · ")}`);
 
   return lines.join("\n");
 }
@@ -132,6 +133,7 @@ async function enrichTopClusters(
       const summary = summaries.get(cluster.problemKey);
       if (!summary) return cluster;
       const enriched: EnrichedCluster = { ...cluster };
+      if (summary.title !== "") enriched.title = summary.title;
       if (summary.potentialProduct !== "") enriched.potentialProduct = summary.potentialProduct;
       if (summary.problemShort !== "") enriched.problemShort = summary.problemShort;
       return enriched;

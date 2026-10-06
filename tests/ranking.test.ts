@@ -397,7 +397,7 @@ describe("rankClustersFromDb", () => {
       }),
     );
     expect(a.summary).toBe(
-      "Inventory sync multi location: 25 mentions in inventory, average score 70, peak 88.",
+      "Inventory sync multi location: 25 đề cập trong tồn kho, điểm trung bình 70, cao nhất 88.",
     );
   });
 

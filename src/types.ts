@@ -76,6 +76,66 @@ export const CATEGORIES = [
 
 export type Category = (typeof CATEGORIES)[number];
 
+/**
+ * Vietnamese display labels for the canonical categories. Used by user-facing
+ * output (digest, ranked API). `Record<Category, string>` keeps this list
+ * complete at compile time when a category is added to CATEGORIES.
+ */
+export const CATEGORY_LABELS_VI: Record<Category, string> = {
+  inventory: "tồn kho",
+  fulfillment: "xử lý đơn hàng",
+  shipping: "vận chuyển",
+  returns: "đổi trả",
+  refunds: "hoàn tiền",
+  chargebacks: "khiếu nại thanh toán",
+  fraud: "gian lận",
+  checkout: "thanh toán",
+  payments: "cổng thanh toán",
+  subscriptions: "thuê bao định kỳ",
+  "customer-support": "chăm sóc khách hàng",
+  crm: "quản lý khách hàng",
+  "email-marketing": "email marketing",
+  "sms-marketing": "SMS marketing",
+  advertising: "quảng cáo",
+  attribution: "quy kết nguồn đơn",
+  analytics: "phân tích dữ liệu",
+  reporting: "báo cáo",
+  seo: "SEO",
+  conversion: "tỷ lệ chuyển đổi",
+  pricing: "định giá",
+  discounts: "giảm giá",
+  bundles: "combo sản phẩm",
+  "product-management": "quản lý sản phẩm",
+  catalog: "danh mục sản phẩm",
+  merchandising: "trưng bày sản phẩm",
+  "international-commerce": "bán hàng quốc tế",
+  taxes: "thuế",
+  accounting: "kế toán",
+  finance: "tài chính",
+  marketplaces: "sàn thương mại điện tử",
+  integrations: "tích hợp hệ thống",
+  automation: "tự động hoá",
+  operations: "vận hành",
+  "supplier-management": "quản lý nhà cung cấp",
+  dropshipping: "dropshipping",
+  "wholesale-b2b": "bán buôn B2B",
+  loyalty: "khách hàng thân thiết",
+  reviews: "đánh giá sản phẩm",
+  "upsell-cross-sell": "bán thêm và bán chéo",
+  "theme-storefront": "giao diện cửa hàng",
+  "shopify-admin": "trang quản trị Shopify",
+  "app-management": "quản lý ứng dụng",
+  "data-sync": "đồng bộ dữ liệu",
+  compliance: "tuân thủ",
+  other: "khác",
+};
+
+/** Vietnamese label for a category slug; unknown slugs fall back to the slug. */
+export function categoryLabelVi(category: string | null | undefined): string {
+  if (category === null || category === undefined || category === "") return CATEGORY_LABELS_VI.other;
+  return CATEGORY_LABELS_VI[category as Category] ?? category.replace(/[-_]+/g, " ");
+}
+
 /** Raw output of a collector, before normalization. */
 export interface RawPost {
   id: string;
