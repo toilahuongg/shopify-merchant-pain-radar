@@ -49,7 +49,7 @@
     {
       "binding": "DB",
       "database_name": "merchant-signal",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "database_id": "7ec1b2f1-cbf1-41c4-9d16-38067ce8a776",
       "migrations_dir": "migrations"
     }
   ],
